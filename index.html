@@ -108,6 +108,40 @@
         color: #212529;
       } /* Black */
 
+      /* LOWERCASE */
+        .status-row-r0 {
+        background-color: #d4edda;
+        color: #155724;
+      } /* Soft Green */
+      .status-row-o1 {
+        background-color: #fff3cd;
+        color: #856404;
+      } /* Soft Yellow */
+      .status-row-d1 {
+        background-color: #fff3cd;
+        color: #856404;
+      } /* Soft Yellow */
+      .status-row-o2 {
+        background-color: #f8d7da;
+        color: #721c24;
+      } /* Soft Red */
+      .status-row-e0 {
+        background-color: #ffffff;
+        color: #212529;
+      } /* White */
+      .status-row-u0 {
+        background-color: #ffffff;
+        color: #212529;
+      } /* White */
+      .status-row-c0 {
+        background-color: #5a89ed;
+        color: #212529;
+      } /* Blue */
+      .status-row-l0 {
+        background-color: #c0c0c0;
+        color: #212529;
+      } /* Black */
+
       /* Default styling for unmapped or generic statuses */
       .status-row-default {
         background-color: #ffffff;
@@ -122,32 +156,86 @@
       <label for="sqlQuery"><strong>SQL Query:</strong></label
       ><br />
       <textarea id="sqlQuery">
-SELECT DISTINCT * FROM units 
-WHERE (modate IS NULL) OR (modate LIKE '1899-12-30%') 
+SELECT unitno, status, unitrate, paidtodate
+FROM (
+    SELECT 
+        LOWER(TRIM(unitno)) AS unitno,
+        CASE 
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'd1' THEN 1 ELSE 0 END) > 0 THEN 'd1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o2' THEN 1 ELSE 0 END) > 0 THEN 'o2'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o1' THEN 1 ELSE 0 END) > 0 THEN 'o1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'r0' THEN 1 ELSE 0 END) > 0 THEN 'r0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'c0' THEN 1 ELSE 0 END) > 0 THEN 'c0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
+            ELSE MAX(LOWER(TRIM(status)))                  
+        END AS status,
+        MAX(unitrate) AS unitrate,
+        -- ✅ THE FIX: Returns NULL instead of 'N/A' so real dates can bubble up to the top!
+        -- MAX(CASE WHEN paidtodate LIKE '%/%' OR paidtodate LIKE '%-%' THEN paidtodate ELSE NULL END) AS paidtodate
+        MAX(dateToNum(paidtodate)) as paidtodate
+    FROM units
+    WHERE ((modate IS NULL) OR (modate LIKE '1899-12-30%') OR (modate LIKE '%1899%'))
+      AND unitno IS NOT NULL
+      AND unitno != ''
+    GROUP BY LOWER(TRIM(unitno))
+) AS clean_records
 ORDER BY 
-    removeNumbers(unitno) ASC,          
-    extractNumbers(unitno) ASC; 
+    CASE 
+        WHEN unitno LIKE '0a%' THEN '0A'
+        WHEN unitno LIKE '0d%' THEN '0D'
+        WHEN unitno LIKE '0f%' THEN '0F'
+        WHEN unitno LIKE '0g%' THEN '0G'
+        WHEN unitno LIKE '0h%' THEN '0H'
+        WHEN unitno LIKE '0i%' THEN '0I'
+        WHEN unitno LIKE '0j%' THEN '0J'
+        ELSE '' 
+    END ASC,
+    LENGTH(unitno) ASC, 
+    unitno ASC;
     </textarea>
           <label for="notePad"><strong>Notepad:</strong></label
       ><br />
           <textarea id="notePad">
-SELECT DISTINCT 
-unitno, status, unitrate, paidtodate
-
-FROM units 
-WHERE ((modate IS NULL) OR (modate LIKE '1899-12-30%'))
-  AND unitno IS NOT NULL
-  AND unitno != ''
-GROUP BY unitno, status, unitrate, paidtodate
+SELECT *
+FROM (
+    SELECT 
+        LOWER(TRIM(unitno)) AS unitno,
+        -- 1. Keeps your prioritized operational status logic
+        CASE 
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'd1' THEN 1 ELSE 0 END) > 0 THEN 'd1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o2' THEN 1 ELSE 0 END) > 0 THEN 'o2'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o1' THEN 1 ELSE 0 END) > 0 THEN 'o1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'r0' THEN 1 ELSE 0 END) > 0 THEN 'r0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'c0' THEN 1 ELSE 0 END) > 0 THEN 'c0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
+            ELSE MAX(LOWER(TRIM(status)))                  
+        END AS status,
+        
+        -- 2. DYNAMIC DATE LOOKUP: Matches both 'MM/DD/YYYY' and 'YYYY-MM-DD' text formats safely
+        MAX(CASE WHEN paidtodate LIKE '%20%' THEN paidtodate ELSE NULL END) AS paidtodate,
+        
+        -- 3. ADD NEW FIELDS HERE: Wrap any extra column in MAX() or ANY_VALUE() to include it dynamically!
+        MAX(unitrate) AS unitrate,
+        MAX(custid) AS custid,
+        MAX(size) AS size
+        
+    FROM units
+    WHERE ((modate IS NULL) OR (modate LIKE '1899-12-30%') OR (modate LIKE '%1899%'))
+      AND unitno IS NOT NULL
+      AND unitno != ''
+    GROUP BY LOWER(TRIM(unitno))
+) AS clean_records
 ORDER BY 
     CASE 
-        WHEN unitno LIKE '0A%' THEN '0A'
-        WHEN unitno LIKE '0D%' THEN '0D'
-        WHEN unitno LIKE '0F%' THEN '0F'
-        WHEN unitno LIKE '0G%' THEN '0G'
-        WHEN unitno LIKE '0H%' THEN '0H'
-        WHEN unitno LIKE '0I%' THEN '0I'
-        WHEN unitno LIKE '0J%' THEN '0J'
+        WHEN unitno LIKE '0a%' THEN '0A'
+        WHEN unitno LIKE '0d%' THEN '0D'
+        WHEN unitno LIKE '0f%' THEN '0F'
+        WHEN unitno LIKE '0g%' THEN '0G'
+        WHEN unitno LIKE '0h%' THEN '0H'
+        WHEN unitno LIKE '0i%' THEN '0I'
+        WHEN unitno LIKE '0j%' THEN '0J'
         ELSE '' 
     END ASC,
     LENGTH(unitno) ASC, 
@@ -156,6 +244,32 @@ ORDER BY
       <br />
       <button id="btnRunQuery">Run Query</button>
       <!-- <button onclick="executeQuery()">Run Query</button> -->
+      
+      <!-- Matrix Container Wrapper -->
+<div id="unitsGridMatrix">
+    
+    <!-- Example of what JS injects dynamically: -->
+    <div class="unit-matrix-square status-row-Rented" title="Unit: A101&#10;Status: R0&#10;Rate: $145.00">
+        <div>A101</div>
+        <div class="sub-text">R0</div>
+    </div>
+
+    <div class="unit-matrix-square status-row-Delinquint" title="Unit: B204&#10;Status: D1&#10;Rate: $180.00">
+        <div>B204</div>
+        <div class="sub-text">D1</div>
+    </div>
+
+    <div class="unit-matrix-square status-row-Vacant" title="Unit: C301&#10;Status: E0&#10;Rate: $95.00">
+        <div>C301</div>
+        <div class="sub-text">E0</div>
+    </div>
+
+    <div class="unit-matrix-square status-row-Locked" title="Unit: C302&#10;Status: L0&#10;Rate: $95.00">
+        <div>C302</div>
+        <div class="sub-text">L0</div>
+    </div>
+    
+</div>
       
         <!-- Table Shell Context -->
 <div id="listLayoutContainer">
@@ -187,32 +301,7 @@ ORDER BY
     </table>
 </div>
       
-<!-- Matrix Container Wrapper -->
-<div id="unitsGridMatrix">
-    
-    <!-- Example of what JS injects dynamically: -->
-    <div class="unit-matrix-square status-row-Rented" title="Unit: A101&#10;Status: R0&#10;Rate: $145.00">
-        <div>A101</div>
-        <div class="sub-text">R0</div>
-    </div>
 
-    <div class="unit-matrix-square status-row-Delinquint" title="Unit: B204&#10;Status: D1&#10;Rate: $180.00">
-        <div>B204</div>
-        <div class="sub-text">D1</div>
-    </div>
-
-    <div class="unit-matrix-square status-row-Vacant" title="Unit: C301&#10;Status: E0&#10;Rate: $95.00">
-        <div>C301</div>
-        <div class="sub-text">E0</div>
-    </div>
-
-    <div class="unit-matrix-square status-row-Locked" title="Unit: C302&#10;Status: L0&#10;Rate: $95.00">
-        <div>C302</div>
-        <div class="sub-text">L0</div>
-    </div>
-    
-</div>
-      
      
 
       <div id="errorMsg" class="error"></div>
@@ -360,4 +449,5 @@ ORDER BY
   <script src="./index.js"></script>
   <script src="./render.js"></script>
   <script src="./status.js"></script>
+  <script src="./initButtons.js"></script>
 </html>

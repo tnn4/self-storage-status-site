@@ -1,13 +1,24 @@
+  // Status codes that have corresponding CSS color rules
+  const colorCodedStatuses = [
+    "R0", "r0", // Rented
+    "O1", "o1",
+    "O2", "o2",
+    "D1", "d1",
+    "E0", "e0",
+    "U0", "u0",
+    "C0",  "c0",// Complimentary
+    "L0",  "l0", // Locked
+  ];
 
 const codeToStatus = {
-  R0: "Rented",
-  O1: "Late",
-  O2: "SuperLate",
-  L0: "Locked",
-  D1: "Delinquint",
-  E0: "Vacant",
-  U0: "Unrentable",
-  C0: "Complimentary"
+  R0: "Rented", r0: "Rented",
+  O1: "Late", o1: "Late",
+  O2: "SuperLate", o2: "SuperLate",
+  L0: "Locked", l0: "Locked",
+  D1: "Delinquint", d1: "Delinquint",
+  E0: "Vacant", e0: "Vacant",
+  U0: "Unrentable", u0: "Unrentable",
+  C0: "Complimentary", c0: "Complimentary"
 };
 
 // Define status-to-color mappings

@@ -41,6 +41,51 @@ ORDER BY
     LENGTH(unitno) ASC, 
     unitno ASC;
 `;
+
+const universalCurrentUnitQuery2 = String.raw`
+SELECT unitno, status, unitrate, paidtodate
+FROM (
+    SELECT 
+        -- Standardize columns for clean output
+        LOWER(TRIM(unitno)) AS unitno, 
+        LOWER(TRIM(status)) AS status, 
+        unitrate, 
+        paidtodate,
+        -- Force partition grouping on stripped lowercase text values to prevent hidden doubling
+        ROW_NUMBER() OVER (
+            PARTITION BY LOWER(TRIM(unitno)) 
+            ORDER BY 
+                CASE 
+                    WHEN LOWER(TRIM(status)) = 'd1' THEN 1 
+                    WHEN LOWER(TRIM(status)) = 'o2' THEN 2 
+                    WHEN LOWER(TRIM(status)) = 'o1' THEN 3 
+                    WHEN LOWER(TRIM(status)) = 'l0' THEN 4 
+                    WHEN LOWER(TRIM(status)) = 'r0' THEN 5 
+                    WHEN LOWER(TRIM(status)) = 'c0' THEN 6 
+                    WHEN LOWER(TRIM(status)) = 'e0' THEN 7 
+                    ELSE 8                    
+                END ASC,
+                paidtodate DESC
+        ) AS rn
+    FROM units
+    WHERE ((modate IS NULL) OR (modate LIKE '1899-12-30%'))
+      AND unitno IS NOT NULL
+) 
+WHERE rn = 1  
+ORDER BY 
+    CASE 
+        WHEN unitno LIKE '0a%' THEN '0A'
+        WHEN unitno LIKE '0d%' THEN '0D'
+        WHEN unitno LIKE '0f%' THEN '0F'
+        WHEN unitno LIKE '0g%' THEN '0G'
+        WHEN unitno LIKE '0h%' THEN '0H'
+        WHEN unitno LIKE '0i%' THEN '0I'
+        WHEN unitno LIKE '0j%' THEN '0J'
+        ELSE '' 
+    END ASC,
+    LENGTH(unitno) ASC, 
+    unitno ASC;
+`;
 //
 
 // lowercase helper Function
@@ -102,34 +147,7 @@ async function getCachedUnits() {
 }
 
 // --- 3. EXECUTE SQL  ---
-async function executeQuery2() {
-  const errorDiv = document.getElementById("errorMsg");
-  errorDiv.textContent = "";
 
-  try {
-    const data = await getCachedUnits();
-
-    console.log("Rows available to SQL:", data.length);
-
-    // Register the array as an AlaSQL table.
-    alasql("DROP TABLE IF EXISTS units");
-    alasql("CREATE TABLE units");
-    alasql.tables.units.data = data;
-
-    // Use FROM units instead of FROM ?
-    const queryText = document
-      .getElementById("sqlQuery")
-      .value.replace(/\bFROM\s+\?/i, "FROM units");
-
-    allResults = alasql(queryText);
-    currentPage = 1;
-
-    console.log("SQL result count:", allResults.length);
-  } catch (err) {
-    console.error("Query failed:", err);
-    errorDiv.textContent = "SQL Error: " + err.message;
-  }
-}
 
 /**
  * Executes an AlaSQL query against cached units data.
@@ -186,12 +204,6 @@ async function handleQueryButtonClick() {
   }
 }
 
-async function getCurrentUnits() {
-  
-  return await executeQuery(currentUnitQuery);
-}
-
-
 
 
 // --- SQL HELPER FUNCTIONS ---
@@ -216,6 +228,22 @@ alasql.fn.removenumbers = function (str) {
 alasql.fn.extractnumbers = function (str) {
   var num = str ? str.replace(/[^0-9]/g, "") : "";
   return num ? parseInt(num, 10) : 0;
+};
+
+
+// Date text -> sortable number (ms). Returns null for junk, 'N/A', and the 1899 sentinel.
+alasql.fn.dateToNum = function (s) {
+  if (s == null) return null;
+  const t = Date.parse(String(s).trim());
+  return Number.isFinite(t) && t > Date.parse("1990-01-01") ? t : null;
+};
+
+// Number -> YYYY-MM-DD (local time)
+alasql.fn.numToDate = function (n) {
+  if (n == null || !Number.isFinite(n)) return null;
+  const d = new Date(n);
+  const pad = (x) => String(x).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
 // END

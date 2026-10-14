@@ -1,4 +1,9 @@
-// COLORED TABLE LOGIC
+
+
+function changePage(direction) {
+  currentPage += direction;
+  renderTable();
+}
 
 // --- RENDERING --- //
 
@@ -49,127 +54,84 @@ function renderTable() {
   document.getElementById("nextBtn").disabled = currentPage >= totalPages;
 }
 
-function changePage(direction) {
-  currentPage += direction;
-  renderTable();
-}
+// ----
 
-// NEW: Dynamic HTML Grid Renderer with Status Color-Coding
-function renderTableColored(results) {
+function renderColoredTable(results) {
   const tableBody = document.getElementById("unitsTableBody");
   if (!tableBody) {
     console.error("UI Target element '#unitsTableBody' not found in DOM.");
     return;
   }
 
-  tableBody.innerHTML = ""; // Clear prior entries
-  const colorCodedStatuses = ["R0", "O1", "O2", "D1", "E0", "U0","C0","L0"];
+  tableBody.innerHTML = ""; 
+
+  if (!results || results.length === 0) return;
+
+console.log(JSON.stringify(results, null, 2));
 
   results.forEach((row) => {
-    // Clean trailing spaces from statuses (e.g. 'E0 ' -> 'E0')
-    const currentStatus = row.status ? row.status.trim() : "";
+    // Case-Insensitive data field extraction
+    const unitNo = row.unitno || row.UnitNo || "";
+    const rawStatus = row.status || row.Status || "";
+    const currentStatus = String(rawStatus).toUpperCase().trim();
+    const rawRate = row.unitrate || row.UnitRate || 0;
+    const rawDate = row.paidtodate || row.PaidtoDate || row.paid_to_date || "";
 
-    // Match CSS rules
     const className = colorCodedStatuses.includes(currentStatus)
       ? `status-row-${currentStatus}`
       : "status-row-default";
 
-    // Format Date output cleanly
-    const paymentDate = row.paidtodate ? row.paidtodate.split("T")[0] : "N/A";
+    // ✅ FIXED DATE SLICER: Never crashes on text formats or array variants
+    let paymentDate = formatDate(rawDate);
+    if (rawDate && String(rawDate).trim() !== "") {
+      const cleanDateStr = String(rawDate).trim();
+      paymentDate = cleanDateStr.includes("T") ? cleanDateStr.split("T")[0] : cleanDateStr;
+      paymentDate = linuxTimeToDate(paymentDate);
+      console.log(`paymentDate=${paymentDate}`);
+    } else {
+        console.log(`rawDate=${rawDate}`);
+    }
 
-    // Construct HTML Row element
+    // ✅ FIXED RATE FORMATTER: Prevents unhandled NaN exceptions
+    const rateNum = Number(rawRate);
+    const formattedRate = Number.isFinite(rateNum) ? `$${rateNum.toFixed(2)}` : "\$0.00";
+
     const trHtml = `
-            <tr class="${className}">
-                <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>${row.unitno || ""}</strong></td>
-                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${currentStatus}</td>
-                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">$${Number(row.unitrate).toFixed(2)}</td>
-                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${paymentDate}</td>
-            </tr>
-        `;
+        <tr class="${className}">
+            <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>${unitNo}</strong></td>
+            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${currentStatus}</td>
+            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">${formattedRate}</td>
+            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${paymentDate}</td>
+        </tr>
+    `;
     tableBody.insertAdjacentHTML("beforeend", trHtml);
   });
 }
 
+function formatDate(raw) {
+  if (raw === null || raw === undefined || raw === "") return "N/A";
 
-// Dynamic HTML Grid Renderer with Status Color-Coding
-function renderTableColored2(results) {
-  const tableBody = document.getElementById("unitsTableBody");
-
-  if (!tableBody) {
-    console.error("UI Target element '#unitsTableBody' not found in DOM.");
-    return;
+  // Number or numeric string (ms timestamp) -> Date
+  const n = typeof raw === "number" ? raw : /^\d{10,}$/.test(String(raw).trim()) ? Number(raw) : NaN;
+  if (Number.isFinite(n)) {
+    const d = new Date(n);
+    const pad = (x) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  tableBody.innerHTML = "";
-
-  // Status codes that have corresponding CSS color rules
-  const colorCodedStatuses = [
-    "R0", // Rented
-    "O1",
-    "O2",
-    "D1",
-    "E0",
-    "U0",
-    "C0", // Complimentary
-    "L0"  // Locked
-  ];
-
-  results.forEach((row) => {
-    const currentStatus = String(row.status ?? "").trim();
-
-    const className = colorCodedStatuses.includes(currentStatus)
-      ? `status-row-${currentStatus}`
-      : "status-row-default";
-
-    const paymentDate = row.paidtodate
-      ? String(row.paidtodate).split("T")[0]
-      : "N/A";
-
-    const rate = Number(row.unitrate);
-    const formattedRate = Number.isFinite(rate)
-      ? `$${rate.toFixed(2)}`
-      : "N/A";
-
-    const trHtml = `
-      <tr class="${className}">
-        <td style="padding: 8px; border: 1px solid #dee2e6;">
-          <strong>${row.unitno ?? ""}</strong>
-        </td>
-        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">
-          ${currentStatus}
-        </td>
-        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">
-          ${formattedRate}
-        </td>
-        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">
-          ${paymentDate}
-        </td>
-      </tr>
-    `;
-
-    tableBody.insertAdjacentHTML("beforeend", trHtml);
-  });
+  // Already a string: strip any time portion
+  const s = String(raw).trim();
+  return s.includes("T") ? s.split("T")[0] : s;
 }
 
-function renderColoredRows(data) {
-  const tableBody = document.getElementById("table-body"); // Replace with your actual table body ID
-  tableBody.innerHTML = ""; // Clear existing rows
-
-  data.forEach((row) => {
-    // Get color from map, fallback to default if status doesn't match
-    const rowColor = STATUS_COLORS[row.status] || STATUS_COLORS["default"];
-
-    const rowHtml = `
-      <tr style="background-color: ${rowColor};">
-        <td>${row.unitno}</td>
-        <td>${row.status}</td>
-        <td>$${row.rate}</td>
-        <td>${row.paid_to_date || "N/A"}</td>
-      </tr>
-    `;
-    tableBody.insertAdjacentHTML("beforeend", rowHtml);
-  });
+function linuxTimeToDate(raw){
+    const date = new Date(Number(raw));
+    return date.toLocaleString();
 }
+// ----
+
+
+
 // END
 
 // GRID CONTROL LOGIC
@@ -257,45 +219,7 @@ function renderUI(results) {
 }
 
 
-// -- INITIALIZE BUTTONS -- //
 
-document.getElementById("btnRunQuery").addEventListener("click", async () => {
-  const errorDiv = document.getElementById("errorMsg");
-  errorDiv.textContent = "";
-
-  try {
-    // 1. Explicitly grab the text inside the click event
-    const inputQuery = document.getElementById("sqlQuery").value;
-    // rawResult = lowercaseKeys(inputQuery);
-    // 2. Pass it into your pure function
-    allResults = await executeQuery(inputQuery);
-    currentPage = 1;
-
-    // 3. Render the output
-    updateUI();
-  } catch (err) {
-    errorDiv.textContent = "SQL Error: " + err.message;
-  }
-});
-
-// Attach View Switching Button Event Listeners on Load initialization
-document.getElementById("btnListView").addEventListener("click", () => {
-  currentViewMode = "list";
-  // No need to query the database again; just re-render the existing data
-  updateUI();
-});
-
-document.getElementById("btnMatrixView").addEventListener("click", () => {
-  currentViewMode = "matrix";
-  // No need to query the database again; just re-render the existing data
-  updateUI();
-});
-
-async function updateUI() {
-  renderTable();
-  renderTableColored(allResults);
-  renderMatrixView2(allResults);
-}
 
 // PARTITION BY BUILDING
 function renderMatrixView2(results) {
@@ -304,7 +228,7 @@ function renderMatrixView2(results) {
 
   matrixContainer.innerHTML = ""; // Clear container
 
-  const colorCodedStatuses = ["R0", "O1", "O2", "D1", "E0", "U0", "C0", "L0"];
+  
 
   // 1. Group records by their alphabetical prefix
   const sections = {};
@@ -380,6 +304,14 @@ function renderMatrixView2(results) {
     matrixContainer.appendChild(gridRow);
   });
 }
+
+
+async function updateUI() {
+  renderTable();
+  renderColoredTable(allResults);
+  renderMatrixView2(allResults);
+}
+
 
 // END
 console.log('Loaded render.js');
