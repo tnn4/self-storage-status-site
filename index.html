@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Facility Status Map</title>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- AlaSQL for client-side SQL execution -->
+    <script src="https://cdn.jsdelivr.net/npm/alasql@4"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f9f9f9;
+        color: #333;
+      }
+      .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      textarea {
+        width: 100%;
+        height: 80px;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 13px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f1f1f1;
+      }
+      .pagination {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .error {
+        color: red;
+        margin-top: 10px;
+      }
+
+      /* Color mappings for Unit Statuses */
+      .status-row-R0 {
+        background-color: #d4edda;
+        color: #155724;
+      } /* Soft Green */
+      .status-row-O1 {
+        background-color: #fff3cd;
+        color: #856404;
+      } /* Soft Yellow */
+      .status-row-D1 {
+        background-color: #fff3cd;
+        color: #856404;
+      } /* Soft Yellow */
+      .status-row-O2 {
+        background-color: #f8d7da;
+        color: #721c24;
+      } /* Soft Red */
+      .status-row-E0 {
+        background-color: #ffffff;
+        color: #212529;
+      } /* White */
+      .status-row-U0 {
+        background-color: #ffffff;
+        color: #212529;
+      } /* White */
+
+      /* Default styling for unmapped or generic statuses */
+      .status-row-default {
+        background-color: #ffffff;
+        color: #212529;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>SQL Explorer</h2>
+
+      <label for="sqlQuery"><strong>SQL Query:</strong></label
+      ><br />
+      <textarea id="sqlQuery">
+SELECT DISTINCT * FROM units 
+WHERE (modate IS NULL) OR (modate LIKE '1899-12-30%') 
+ORDER BY 
+    removeNumbers(unitno) ASC,          
+    extractNumbers(unitno) ASC; 
+    </textarea
+      >
+      <br />
+      <button onclick="executeQuery()">Run Query</button>
+
+      <div id="errorMsg" class="error"></div>
+
+      <div class="pagination">
+        <button id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextBtn" onclick="changePage(1)" disabled>Next</button>
+      </div>
+
+      <!-- COLORED GRID -->
+      <!-- 1. View Switching Controls -->
+      <div style="margin-bottom: 15px; font-family: sans-serif">
+        <button id="btnListView" style="padding: 6px 12px; cursor: pointer">
+          📋 List View
+        </button>
+        <button
+          id="btnMatrixView"
+          style="padding: 6px 12px; cursor: pointer; font-weight: bold"
+        >
+          🔲 Matrix View
+        </button>
+      </div>
+
+      <!-- 2. The Container targets -->
+      <div id="listLayoutContainer" style="display: none">
+        <table
+          style="
+            width: 100%;
+            border-collapse: collapse;
+            font-family: sans-serif;
+          "
+        >
+          <thead>
+            <tr style="background-color: #f8f9fa">
+              <th style="padding: 8px; border: 1px solid #dee2e6">Unit</th>
+              <th style="padding: 8px; border: 1px solid #dee2e6">Status</th>
+            </tr>
+          </thead>
+          <tbody id="unitsTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Matrix view target element -->
+      <div
+        id="unitsGridMatrix"
+        style="
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+          gap: 8px;
+          font-family: sans-serif;
+        "
+      ></div>
+
+      <!-- END -->
+      <!-- COLORED ROW VIEW -->
+      <table
+        style="
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+          font-family: sans-serif;
+        "
+      >
+        <thead>
+          <tr
+            style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6"
+          >
+            <th
+              style="padding: 10px; text-align: left; border: 1px solid #dee2e6"
+            >
+              Unit Number
+            </th>
+            <th
+              style="
+                padding: 10px;
+                text-align: center;
+                border: 1px solid #dee2e6;
+              "
+            >
+              Status
+            </th>
+            <th
+              style="
+                padding: 10px;
+                text-align: right;
+                border: 1px solid #dee2e6;
+              "
+            >
+              Rate
+            </th>
+            <th
+              style="
+                padding: 10px;
+                text-align: center;
+                border: 1px solid #dee2e6;
+              "
+            >
+              Paid To Date
+            </th>
+          </tr>
+        </thead>
+        <!-- JavaScript binds directly to this body identifier -->
+        <tbody id="unitsTableBody">
+          <tr>
+            <td
+              colspan="4"
+              style="text-align: center; padding: 20px; color: #6c757d"
+            >
+              Click 'Run Query' to load color-coded rows...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- END -->
+
+    <!-- EXCEL VIEW -->
+    <div style="overflow-x: auto">
+      <table id="resultsTable">
+        <thead>
+          <tr id="tableHeaders"></tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="5" style="text-align: center">
+              Click 'Run Query' to load data
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- END -->
+    <script>
+      // --- 1. CONFIGURATION ---
+      const SUPABASE_URL = "https://ryehsunhoycigiviuupl.supabase.co/";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_KSECkuaRIqINH3OmBxJHlg_U_gs0y0L";
+
+      const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+      );
+
+      let allResults = [];
+      let currentPage = 1;
+      const rowsPerPage = 500;
+
+      async function testSupabaseConnection() {
+        const errorDiv = document.getElementById("errorMsg");
+
+        errorDiv.style.color = "#333";
+        errorDiv.textContent = "Testing Supabase API connection...";
+
+        try {
+          if (typeof supabase === "undefined") {
+            throw new Error("Supabase library failed to load from the CDN.");
+          }
+
+          const { data, error, status } = await supabaseClient
+            .from("unit")
+            .select("*", { count: "exact", head: true });
+
+          if (error) {
+            console.error("Supabase API error:", error);
+            throw new Error(`HTTP ${status}: ${error.message}`);
+          }
+
+          errorDiv.style.color = "green";
+          errorDiv.textContent = "API connection successful. HTTP " + status;
+
+          console.log("Supabase API connection successful.");
+        } catch (err) {
+          errorDiv.style.color = "red";
+          errorDiv.textContent = "Connection failed: " + err.message;
+          console.error("Connection test failed:", err);
+        }
+      }
+
+      // --- 2. FETCH & CACHE DATA ---
+      async function getCachedUnits() {
+        const batchSize = 500;
+        const allData = [];
+
+        for (let from = 0; ; from += batchSize) {
+          const to = from + batchSize - 1;
+
+          const { data, error } = await supabaseClient
+            .from("unit")
+            .select("*")
+            .range(from, to);
+
+          if (error) {
+            throw new Error(
+              `Supabase fetch failed at row ${from}: ${error.message}`,
+            );
+          }
+
+          allData.push(...data);
+
+          if (data.length < batchSize) {
+            break;
+          }
+        }
+
+        console.log("Total Supabase rows fetched:", allData.length);
+        console.log("First row:", allData[0]);
+
+        return allData;
+      }
+
+      // --- 3. EXECUTE SQL & RENDER ---
+      async function executeQuery() {
+        const errorDiv = document.getElementById("errorMsg");
+        errorDiv.textContent = "";
+
+        try {
+          const data = await getCachedUnits();
+
+          console.log("Rows available to SQL:", data.length);
+
+          // Register the array as an AlaSQL table.
+          alasql("DROP TABLE IF EXISTS units");
+          alasql("CREATE TABLE units");
+          alasql.tables.units.data = data;
+
+          // Use FROM units instead of FROM ?
+          const queryText = document
+            .getElementById("sqlQuery")
+            .value.replace(/\bFROM\s+\?/i, "FROM units");
+
+          allResults = alasql(queryText);
+          currentPage = 1;
+
+          console.log("SQL result count:", allResults.length);
+
+          renderTable();
+          renderTableColored(allResults);
+          renderMatrixView(allResults);
+        } catch (err) {
+          console.error("Query failed:", err);
+          errorDiv.textContent = "SQL Error: " + err.message;
+        }
+      }
+
+      // --- SQL HELPER FUNCTIONS ---
+      // Function to remove numbers
+
+      alasql.fn.removeNumbers = function (str) {
+        return str ? str.replace(/[0-9]/g, "") : "";
+      };
+
+      // Function to keep only numbers
+      alasql.fn.extractNumbers = function (str) {
+        var num = str ? str.replace(/[^0-9]/g, "") : "";
+        return num ? parseInt(num, 10) : 0;
+      };
+
+      // END
+
+      // --- RENDERING --- //
+
+      function renderTable() {
+        const headersTr = document.getElementById("tableHeaders");
+        const bodyTr = document.getElementById("tableBody");
+        headersTr.innerHTML = "";
+        bodyTr.innerHTML = "";
+
+        if (allResults.length === 0) {
+          bodyTr.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;">No rows returned</td></tr>';
+          document.getElementById("pageInfo").textContent = "Page 1 of 1";
+          document.getElementById("prevBtn").disabled = true;
+          document.getElementById("nextBtn").disabled = true;
+          return;
+        }
+
+        // Setup Headers based on keys of the first returned object
+        const keys = Object.keys(allResults[0]);
+        keys.forEach((key) => {
+          const th = document.createElement("th");
+          th.textContent = key;
+          headersTr.appendChild(th);
+        });
+
+        // Pagination slicing
+        const totalPages = Math.ceil(allResults.length / rowsPerPage);
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const paginatedData = allResults.slice(start, end);
+
+        // Populate Rows
+        paginatedData.forEach((row) => {
+          const tr = document.createElement("tr");
+          keys.forEach((key) => {
+            const td = document.createElement("td");
+            td.textContent = row[key] !== null ? row[key] : "";
+            tr.appendChild(td);
+          });
+          bodyTr.appendChild(tr);
+        });
+
+        // Update Pagination controls
+        document.getElementById("pageInfo").textContent =
+          `Page ${currentPage} of ${totalPages} (Total: ${allResults.length} rows)`;
+        document.getElementById("prevBtn").disabled = currentPage === 1;
+        document.getElementById("nextBtn").disabled = currentPage >= totalPages;
+      }
+
+      function changePage(direction) {
+        currentPage += direction;
+        renderTable();
+      }
+
+      async function diagnoseUnitTable() {
+        const output = document.getElementById("errorMsg");
+
+        try {
+          const { data, error, count, status, statusText } =
+            await supabaseClient
+              .from("unit")
+              .select("*", { count: "exact" })
+              .limit(5);
+
+          console.log("HTTP status:", status, statusText);
+          console.log("API error:", error);
+          console.log("Exact count:", count);
+          console.log("Rows returned:", data?.length);
+          console.log("Sample data:", data);
+
+          if (error) {
+            output.textContent = "API error: " + error.message;
+            return;
+          }
+
+          output.textContent =
+            `HTTP ${status}. Rows returned: ${data.length}. ` +
+            `Exact count: ${count ?? "unavailable"}. ` +
+            "See browser Console for details.";
+        } catch (err) {
+          output.textContent = "Request failed: " + err.message;
+          console.error(err);
+        }
+      }
+      // END
+
+      // COLORED GRID LOGIC
+
+      // NEW: Dynamic HTML Grid Renderer with Status Color-Coding
+      function renderTableColored(results) {
+        const tableBody = document.getElementById("unitsTableBody");
+        if (!tableBody) {
+          console.error(
+            "UI Target element '#unitsTableBody' not found in DOM.",
+          );
+          return;
+        }
+
+        tableBody.innerHTML = ""; // Clear prior entries
+        const colorCodedStatuses = ["R0", "O1", "O2", "D1", "E0", "U0"];
+
+        results.forEach((row) => {
+          // Clean trailing spaces from statuses (e.g. 'E0 ' -> 'E0')
+          const currentStatus = row.status ? row.status.trim() : "";
+
+          // Match CSS rules
+          const className = colorCodedStatuses.includes(currentStatus)
+            ? `status-row-${currentStatus}`
+            : "status-row-default";
+
+          // Format Date output cleanly
+          const paymentDate = row.paidtodate
+            ? row.paidtodate.split("T")[0]
+            : "N/A";
+
+          // Construct HTML Row element
+          const trHtml = `
+            <tr class="${className}">
+                <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>${row.unitno || ""}</strong></td>
+                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${currentStatus}</td>
+                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">$${Number(row.unitrate).toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${paymentDate}</td>
+            </tr>
+        `;
+          tableBody.insertAdjacentHTML("beforeend", trHtml);
+        });
+      }
+      // END
+
+      // GRID CONTROL LOGIC
+
+      // Add new tracking state variables at the top of your script scope
+      let currentViewMode = "matrix"; // Options: 'list' or 'matrix'
+
+      // Programmatic CSS Matrix block variables mapping layout dimensions
+      const matrixStyle = document.createElement("style");
+      matrixStyle.innerHTML = `
+    .unit-matrix-square {
+        aspect-ratio: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #6c757d;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.15s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .unit-matrix-square:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .unit-matrix-square .sub-text {
+        font-size: 10px;
+        font-weight: normal;
+        margin-top: 2px;
+        opacity: 0.8;
+    }
+`;
+      document.head.appendChild(matrixStyle);
+
+      function renderUI(results) {
+        const listContainer = document.getElementById("listLayoutContainer");
+        const matrixContainer = document.getElementById("unitsGridMatrix");
+
+        // Toggle primary parent display panels
+        if (currentViewMode === "matrix") {
+          listContainer.style.display = "none";
+          matrixContainer.style.display = "grid";
+          renderMatrixView(results);
+        } else {
+          listContainer.style.display = "block";
+          matrixContainer.style.display = "none";
+          renderTableGrid(results); // Uses your prior existing function logic
+        }
+      }
+
+      function renderMatrixView(results) {
+        const matrixContainer = document.getElementById("unitsGridMatrix");
+        matrixContainer.innerHTML = ""; // Clear container
+
+        const colorCodedStatuses = ["R0", "O1", "O2", "D1", "E0", "U0"];
+
+        results.forEach((row) => {
+          const currentStatus = row.status ? row.status.trim() : "";
+          const className = colorCodedStatuses.includes(currentStatus)
+            ? `status-row-${currentStatus}`
+            : "status-row-default";
+
+          // Strip leading zeros from unit label for clean square display
+          const displayLabel = row.unitno
+            ? row.unitno.replace(/^0+/, "")
+            : "??";
+
+          const squareHtml = `
+            <div class="unit-matrix-square ${className}" title="Unit: ${row.unitno}\nStatus: ${currentStatus}\nRate: $${row.unitrate}">
+                <div>${displayLabel}</div>
+                <div class="sub-text">${currentStatus}</div>
+            </div>
+        `;
+          matrixContainer.insertAdjacentHTML("beforeend", squareHtml);
+        });
+      }
+
+      // Attach View Switching Button Event Listeners on Load initialization
+      document.getElementById("btnListView").addEventListener("click", () => {
+        currentViewMode = "list";
+        executeQuery();
+      });
+      document.getElementById("btnMatrixView").addEventListener("click", () => {
+        currentViewMode = "matrix";
+        executeQuery();
+      });
+
+      // PARTITION BY BUILDING
+      function renderMatrixView2(results) {
+        const matrixContainer = document.getElementById("unitsGridMatrix");
+        if (!matrixContainer) return;
+
+        matrixContainer.innerHTML = ""; // Clear container
+
+        const colorCodedStatuses = ["R0", "O1", "O2", "D1", "E0", "U0"];
+
+        // 1. Group records by their alphabetical prefix
+        const sections = {};
+
+        results.forEach((row) => {
+          const unitStr = row.unitno ? String(row.unitno).trim() : "";
+
+          // Extract letters from the start/content (e.g., "A001" -> "A", "105" -> "Numbers")
+          const match = unitStr.match(/^[A-Za-z]+/);
+          const prefix = match ? match[0].toUpperCase() : "Numbers";
+
+          if (!sections[prefix]) {
+            sections[prefix] = [];
+          }
+          sections[prefix].push(row);
+        });
+
+        // 2. Iterate through sorted alpha keys and build UI blocks
+        const sortedPrefixes = Object.keys(sections).sort((a, b) => {
+          if (a === "Numbers") return -1; // Push pure numbers to top, or change to 1 to push to bottom
+          if (b === "Numbers") return 1;
+          return a.localeCompare(b);
+        });
+
+        sortedPrefixes.forEach((prefix) => {
+          // Create a unique section block to house headers and its nested squares
+          const sectionWrapper = document.createElement("div");
+          sectionWrapper.style.cssText = `
+            grid-column: 1 / -1; 
+            margin-top: 20px; 
+            margin-bottom: 10px;
+        `;
+
+          // Dynamic Label Header
+          sectionWrapper.innerHTML = `
+            <h3 style="margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 2px solid #dee2e6; color: #495057;">
+                Section ${prefix}
+            </h3>
+        `;
+          matrixContainer.appendChild(sectionWrapper);
+
+          // Sub-grid row container for this prefix cluster
+          const gridRow = document.createElement("div");
+          gridRow.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
+        `;
+
+          // Populate items belonging to this group context
+          sections[prefix].forEach((row) => {
+            const currentStatus = row.status ? row.status.trim() : "";
+            const className = colorCodedStatuses.includes(currentStatus)
+              ? `status-row-${currentStatus}`
+              : "status-row-default";
+
+            // Clean display labels by stripping excess leading padding zeros (e.g. "A0004" -> "A4")
+            // Retains letter prefix context during layout print string building
+            const displayLabel = row.unitno
+              ? row.unitno.replace(/^([A-Za-z]*)0+/, "\$1")
+              : "??";
+
+            const squareHtml = `
+                <div class="unit-matrix-square ${className}" title="Unit: ${row.unitno}\nStatus: ${currentStatus}\nRate: $${row.unitrate}">
+                    <div>${displayLabel}</div>
+                    <div class="sub-text">${currentStatus}</div>
+                </div>
+            `;
+            gridRow.insertAdjacentHTML("beforeend", squareHtml);
+          });
+
+          matrixContainer.appendChild(gridRow);
+        });
+      }
+
+      // END
+    </script>
+
+    <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+
+    <button onclick="diagnoseUnitTable()">Diagnose Unit Table</button>
+  </body>
+</html>
