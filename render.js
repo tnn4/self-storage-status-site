@@ -1,4 +1,4 @@
-
+let renderDebugMode = false;
 
 function changePage(direction) {
   currentPage += direction;
@@ -67,7 +67,10 @@ function renderColoredTable(results) {
 
   if (!results || results.length === 0) return;
 
-console.log(JSON.stringify(results, null, 2));
+  if (renderDebugMode){
+    console.log(JSON.stringify(results, null, 2));
+  }
+  
 
   results.forEach((row) => {
     // Case-Insensitive data field extraction
@@ -87,9 +90,15 @@ console.log(JSON.stringify(results, null, 2));
       const cleanDateStr = String(rawDate).trim();
       paymentDate = cleanDateStr.includes("T") ? cleanDateStr.split("T")[0] : cleanDateStr;
       paymentDate = linuxTimeToDate(paymentDate);
-      console.log(`paymentDate=${paymentDate}`);
+      if (renderDebugMode){
+        console.log(`paymentDate=${paymentDate}`);
+      }
+      
     } else {
+      if (renderDebugMode){
         console.log(`rawDate=${rawDate}`);
+      }
+        
     }
 
     // ✅ FIXED RATE FORMATTER: Prevents unhandled NaN exceptions
@@ -311,6 +320,11 @@ async function updateUI() {
   renderColoredTable(allResults);
   renderMatrixView2(allResults);
 }
+
+document.getElementById("toggleRenderDebugButton").addEventListener( "click", () => {
+  renderDebugMode = !renderDebugMode;
+  console.log(`Render debug mode = ${renderDebugMode}`);
+});
 
 
 // END
