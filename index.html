@@ -316,17 +316,7 @@ ORDER BY
 
     <!-- COLORED GRID -->
      <!-- 1. View Switching Controls -->
-      <div style="margin-bottom: 15px; font-family: sans-serif">
-        <button id="btnListView" style="padding: 6px 12px; cursor: pointer">
-          📋 List View
-        </button>
-        <button
-          id="btnMatrixView"
-          style="padding: 6px 12px; cursor: pointer; font-weight: bold"
-        >
-          🔲 Matrix View
-        </button>
-      </div>
+
 
       <!-- 2. The Container targets -->
       <div id="listLayoutContainer" style="display: none">
@@ -424,21 +414,49 @@ ORDER BY
     </div>
     <!-- END -->
 
-    <!-- EXCEL VIEW -->
-          <div style="overflow-x: auto">
-        <table id="resultsTable">
-          <thead>
-            <tr id="tableHeaders"></tr>
-          </thead>
-          <tbody id="tableBody">
-            <tr>
-              <td colspan="5" style="text-align: center">
-                Click 'Run Query' to load data
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+<!-- DEVELOPER MODE BUTTON -->
+<button id="devModeBtn" onclick="toggleDevView()">Enable Dev Mode</button>
+
+<!-- EXCEL VIEW (Hidden by default using style="display: none;") -->
+<div id="excelViewContainer" style="overflow-x: auto; display: none;">
+  <table id="resultsTable">
+    <thead>
+      <tr id="tableHeaders"></tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr>
+        <td colspan="5" style="text-align: center">
+          Click 'Run Query' to load data
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  function toggleDevView() {
+    const devElement = document.getElementById('excelViewContainer');
+    const btn = document.getElementById('devModeBtn');
+    
+    // If it's already visible, let the developer hide it again without a prompt
+    if (devElement.style.display === 'block') {
+      devElement.style.display = 'none';
+      btn.innerText = 'Enable Dev Mode';
+      return;
+    }
+
+    // Prompt for the developer password
+    const password = prompt("Enter developer password:");
+    
+    if (password === "dev") { // <-- Change your password here
+      devElement.style.display = 'block';
+      btn.innerText = 'Disable Dev Mode';
+    } else if (password !== null) { 
+      // Ensure it doesn't alert if the user clicked "Cancel"
+      alert("Incorrect password.");
+    }
+  }
+</script>
     <!-- END -->
    
 
