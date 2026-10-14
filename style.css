@@ -1,0 +1,61 @@
+textarea {
+    field-sizing: content; /* Automatically grows and shrinks with text */
+    min-height: 40px;      /* Keeps it from collapsing when empty */
+    max-height: 300px;     /* Optional: caps how big it can get */
+}
+
+/* --- Core Row & Matrix CSS Classes --- */
+.status-row-Locked        { background-color: #000000 !important; color: #ffffff; }
+.status-row-Problem       { background-color: #ff3f3f !important; color: #ffffff; }
+.status-row-Delinquint    { background-color: #ff3f3f !important; color: #ffffff; }
+.status-row-SuperLate     { background-color: #ff3f3f !important; color: #ffffff; }
+.status-row-Late          { background-color: #ffff10 !important; color: #000000; }
+.status-row-Vacant        { background-color: #ffffff !important; color: #000000; }
+.status-row-Rented        { background-color: #ccffcc !important; color: #000000; }
+.status-row-Maintenance   { background-color: #ffe6cc !important; color: #000000; }
+.status-row-Complimentary { background-color: #e6f2ff !important; color: #000000; }
+.status-row-Unrentable    { background-color: #c0c0c0 !important; color: #000000; }
+.status-row-default       { background-color: #ffffff !important; color: #000000; }
+
+/* --- Table Specific Padding --- */
+#unitsTableBody tr td {
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+}
+
+/* --- Matrix View Grid Rules --- */
+#unitsGridMatrix {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    padding: 15px 0;
+}
+
+/* Individual Matrix Squares */
+.unit-matrix-square {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #adb5bd;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.unit-matrix-square:hover {
+    transform: scale(1.06);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.unit-matrix-square .sub-text {
+    font-size: 10px;
+    font-weight: normal;
+    margin-top: 3px;
+    opacity: 0.75;
+}
