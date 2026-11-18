@@ -57,20 +57,21 @@ function renderTable() {
 // ----
 
 function renderColoredTable(results) {
-  const tableBody = document.getElementById("unitsTableBody");
+  const tableBody = document.getElementById("activeUnitsTableBody");
   if (!tableBody) {
-    console.error("UI Target element '#unitsTableBody' not found in DOM.");
+    console.error(
+      "UI Target element '#activeUnitsTableBody' not found in DOM.",
+    );
     return;
   }
 
-  tableBody.innerHTML = ""; 
+  tableBody.innerHTML = "";
 
   if (!results || results.length === 0) return;
 
-  if (renderDebugMode){
+  if (renderDebugMode) {
     console.log(JSON.stringify(results, null, 2));
   }
-  
 
   results.forEach((row) => {
     // Case-Insensitive data field extraction
@@ -88,22 +89,24 @@ function renderColoredTable(results) {
     let paymentDate = formatDate(rawDate);
     if (rawDate && String(rawDate).trim() !== "") {
       const cleanDateStr = String(rawDate).trim();
-      paymentDate = cleanDateStr.includes("T") ? cleanDateStr.split("T")[0] : cleanDateStr;
+      paymentDate = cleanDateStr.includes("T")
+        ? cleanDateStr.split("T")[0]
+        : cleanDateStr;
       paymentDate = linuxTimeToDate(paymentDate);
-      if (renderDebugMode){
+      if (renderDebugMode) {
         console.log(`paymentDate=${paymentDate}`);
       }
-      
     } else {
-      if (renderDebugMode){
+      if (renderDebugMode) {
         console.log(`rawDate=${rawDate}`);
       }
-        
     }
 
     // ✅ FIXED RATE FORMATTER: Prevents unhandled NaN exceptions
     const rateNum = Number(rawRate);
-    const formattedRate = Number.isFinite(rateNum) ? `$${rateNum.toFixed(2)}` : "\$0.00";
+    const formattedRate = Number.isFinite(rateNum)
+      ? `$${rateNum.toFixed(2)}`
+      : "\$0.00";
 
     const trHtml = `
         <tr class="${className}">
@@ -121,7 +124,12 @@ function formatDate(raw) {
   if (raw === null || raw === undefined || raw === "") return "N/A";
 
   // Number or numeric string (ms timestamp) -> Date
-  const n = typeof raw === "number" ? raw : /^\d{10,}$/.test(String(raw).trim()) ? Number(raw) : NaN;
+  const n =
+    typeof raw === "number"
+      ? raw
+      : /^\d{10,}$/.test(String(raw).trim())
+        ? Number(raw)
+        : NaN;
   if (Number.isFinite(n)) {
     const d = new Date(n);
     const pad = (x) => String(x).padStart(2, "0");
@@ -133,13 +141,11 @@ function formatDate(raw) {
   return s.includes("T") ? s.split("T")[0] : s;
 }
 
-function linuxTimeToDate(raw){
-    const date = new Date(Number(raw));
-    return date.toLocaleString();
+function linuxTimeToDate(raw) {
+  const date = new Date(Number(raw));
+  return date.toLocaleString();
 }
 // ----
-
-
 
 // END
 
@@ -180,8 +186,7 @@ document.head.appendChild(matrixStyle);
 
 // -- RENDER COLORED MATRIX --
 
-
-
+/*
 // Optimized implementation for your script injection layer
 function renderMatrixView2(results) {
   const matrixContainer = document.getElementById("unitsGridMatrix");
@@ -210,6 +215,7 @@ function renderMatrixView2(results) {
     matrixContainer.insertAdjacentHTML("beforeend", squareHtml);
   });
 }
+*/
 
 function renderUI(results) {
   const listContainer = document.getElementById("listLayoutContainer");
@@ -227,17 +233,12 @@ function renderUI(results) {
   }
 }
 
-
-
-
 // PARTITION BY BUILDING
 function renderMatrixView2(results) {
   const matrixContainer = document.getElementById("unitsGridMatrix");
   if (!matrixContainer) return;
 
   matrixContainer.innerHTML = ""; // Clear container
-
-  
 
   // 1. Group records by their alphabetical prefix
   const sections = {};
@@ -314,18 +315,18 @@ function renderMatrixView2(results) {
   });
 }
 
-
 async function updateUI() {
   renderTable();
   renderColoredTable(allResults);
   renderMatrixView2(allResults);
 }
 
-document.getElementById("toggleRenderDebugButton").addEventListener( "click", () => {
-  renderDebugMode = !renderDebugMode;
-  console.log(`Render debug mode = ${renderDebugMode}`);
-});
-
+document
+  .getElementById("toggleRenderDebugButton")
+  .addEventListener("click", () => {
+    renderDebugMode = !renderDebugMode;
+    console.log(`Render debug mode = ${renderDebugMode}`);
+  });
 
 // END
-console.log('Loaded render.js');
+console.log("Loaded render.js");
