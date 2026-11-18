@@ -160,14 +160,17 @@ SELECT unitno, status, unitrate, paidtodate
 FROM (
     SELECT 
         LOWER(TRIM(unitno)) AS unitno,
-        CASE 
+        CASE
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l2' THEN 1 ELSE 0 END) > 0 THEN 'l2'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l1' THEN 1 ELSE 0 END) > 0 THEN 'l1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'd1' THEN 1 ELSE 0 END) > 0 THEN 'd1'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o2' THEN 1 ELSE 0 END) > 0 THEN 'o2'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o1' THEN 1 ELSE 0 END) > 0 THEN 'o1'
-            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'r0' THEN 1 ELSE 0 END) > 0 THEN 'r0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'c0' THEN 1 ELSE 0 END) > 0 THEN 'c0'
-            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
+            
             ELSE MAX(LOWER(TRIM(status)))                  
         END AS status,
         MAX(unitrate) AS unitrate,
@@ -203,13 +206,16 @@ FROM (
         LOWER(TRIM(unitno)) AS unitno,
         -- 1. Keeps your prioritized operational status logic
         CASE 
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l2' THEN 1 ELSE 0 END) > 0 THEN 'l2'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l1' THEN 1 ELSE 0 END) > 0 THEN 'l1'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'd1' THEN 1 ELSE 0 END) > 0 THEN 'd1'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o2' THEN 1 ELSE 0 END) > 0 THEN 'o2'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'o1' THEN 1 ELSE 0 END) > 0 THEN 'o1'
-            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'l0' THEN 1 ELSE 0 END) > 0 THEN 'l0'
+            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'r0' THEN 1 ELSE 0 END) > 0 THEN 'r0'
             WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'c0' THEN 1 ELSE 0 END) > 0 THEN 'c0'
-            WHEN SUM(CASE WHEN LOWER(TRIM(status)) = 'e0' THEN 1 ELSE 0 END) > 0 THEN 'e0'
+            
             ELSE MAX(LOWER(TRIM(status)))                  
         END AS status,
         

@@ -1,21 +1,31 @@
   // Status codes that have corresponding CSS color rules
   const colorCodedStatuses = [
+    "L2", "l2",
+    "L1", "l1", // Lien done
+    "L0", "l0", // Lien
     "R0", "r0", // Rented
-    "O1", "o1",
-    "O2", "o2",
+    "O2", "o2", // overlocked
+    "O1", "o1", 
+    "D2", "d2", // delinquent
     "D1", "d1",
-    "E0", "e0",
-    "U0", "u0",
-    "C0",  "c0",// Complimentary
-    "L0",  "l0", // Locked
+    "E0", "e0", // vacant
+    "U0", "u0", // unrentable
+    "C0", "c0", // Complimentary
+    
   ];
 
 const codeToStatus = {
+  O2: "Overlocked2", o2: "Overlocked2",
+  O1: "Overlocked1", o1: "Overlocked1",
+  L2: "Lien0", l2: "Lien0",
+  L1: "Lien0", l1: "Lien0",
+  L0: "Lien0", l0: "Lien0",
+  D5: "Delinquint5", d5: "Delinquint5",
+  D4: "Delinquint4", d4: "Delinquint4",
+  D3: "Delinquint3", d3: "Delinquint3",
+  D2: "Delinquint2", d2: "Delinquint2",
+  D1: "Delinquint1", d1: "Delinquint1",
   R0: "Rented", r0: "Rented",
-  O1: "Late", o1: "Late",
-  O2: "SuperLate", o2: "SuperLate",
-  L0: "Locked", l0: "Locked",
-  D1: "Delinquint", d1: "Delinquint",
   E0: "Vacant", e0: "Vacant",
   U0: "Unrentable", u0: "Unrentable",
   C0: "Complimentary", c0: "Complimentary"
@@ -23,16 +33,17 @@ const codeToStatus = {
 
 // Define status-to-color mappings
 const STATUS_COLORS = {
-  Locked: "#000000",
+  Unrentable: "#c0c0c0",
+  Lien0: "#000000",
   Problem: "#ff3f3f",
-  Delinquint: "#ff3f3f",
-  SuperLate: "#ff3f3f",
-  Late: "#ffff10",
-  Vacant: "#ffffff", 
+  Overlocked2: "#ff3f3f",
+  Overlocked1: "#ff3f3f",
+  Delinquent2: "#ffff10",
+  Delinquent1: "#ffff10",
+  Vacant: "#ffffff",
   Rented: "#ccffcc", // Soft Green
   Maintenance: "#ffe6cc", // Soft Orange
   Complimentary: "#e6f2ff", // Soft Blue
-  Unrentable: "#c0c0c0",
   // Add fallback or other statuses as needed
   default: "#ffffff",
 };

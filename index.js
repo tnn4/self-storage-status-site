@@ -56,14 +56,26 @@ FROM (
             PARTITION BY LOWER(TRIM(unitno)) 
             ORDER BY 
                 CASE 
-                    WHEN LOWER(TRIM(status)) = 'd1' THEN 1 
-                    WHEN LOWER(TRIM(status)) = 'o2' THEN 2 
-                    WHEN LOWER(TRIM(status)) = 'o1' THEN 3 
-                    WHEN LOWER(TRIM(status)) = 'l0' THEN 4 
-                    WHEN LOWER(TRIM(status)) = 'r0' THEN 5 
-                    WHEN LOWER(TRIM(status)) = 'c0' THEN 6 
-                    WHEN LOWER(TRIM(status)) = 'e0' THEN 7 
-                    ELSE 8                    
+                  WHEN LOWER(TRIM(status)) = 'u0' THEN 1
+                  WHEN LOWER(TRIM(status)) = 'l0' THEN 2
+                  WHEN LOWER(TRIM(status)) = 'l1' THEN 3
+                  WHEN LOWER(TRIM(status)) = 'l2' THEN 4
+                  WHEN LOWER(TRIM(status)) = 'd5' THEN 5
+                  WHEN LOWER(TRIM(status)) = 'd4' THEN 6
+                  WHEN LOWER(TRIM(status)) = 'd3' THEN 7
+                  WHEN LOWER(TRIM(status)) = 'd2' THEN 8
+                  WHEN LOWER(TRIM(status)) = 'd1' THEN 9 
+                  WHEN LOWER(TRIM(status)) = 'o5' THEN 10
+                  WHEN LOWER(TRIM(status)) = 'o4' THEN 11
+                  WHEN LOWER(TRIM(status)) = 'o3' THEN 12
+                  WHEN LOWER(TRIM(status)) = 'o2' THEN 13 
+                  WHEN LOWER(TRIM(status)) = 'o1' THEN 14
+                  WHEN LOWER(TRIM(status)) = 'p0' THEN 15
+                  WHEN LOWER(TRIM(status)) = 'l0' THEN 16
+                  WHEN LOWER(TRIM(status)) = 'e0' THEN 17 
+                  WHEN LOWER(TRIM(status)) = 'r0' THEN 18 
+                  WHEN LOWER(TRIM(status)) = 'c0' THEN 19 
+                  ELSE 100                    
                 END ASC,
                 paidtodate DESC
         ) AS rn
