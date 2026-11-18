@@ -135,7 +135,7 @@
         color: #212529;
       } /* White */
       .status-row-u0 {
-        background-color: #ffffff;
+        background-color: #000000;
         color: #212529;
       } /* White */
       .status-row-c0 {
@@ -143,7 +143,7 @@
         color: #212529;
       } /* Blue */
       .status-row-l0 {
-        background-color: #000000;
+        background-color: #c0c0c0;
         color: #212529;
       } /* Black */
 
@@ -163,7 +163,48 @@
       <textarea id="sqlQuery">
 WITH ranked_units AS (
     SELECT 
+        moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate, currentrent, day30, day60, day90, latefee, lien,
+        -- Row-level sum protecting against NULL values
+        (
+            COALESCE(currentrent, 0) + 
+            COALESCE(day30, 0) + 
+            COALESCE(day60, 0) + 
+            COALESCE(day90, 0) + 
+            COALESCE(latefee, 0) + 
+            COALESCE(lien, 0)
+        ) AS balance,
+        ROW_NUMBER() OVER (
+            PARTITION BY unitno 
+            ORDER BY moddate DESC NULLS LAST
+        ) AS rn
+    FROM unit
+    WHERE (modate IS NULL OR modate::date = '1899-12-30'::date)
+      AND unitno IS NOT NULL 
+      AND unitno != ''
+)
+SELECT moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate, balance
+FROM ranked_units
+WHERE rn = 1
+ORDER BY 
+    NULLIF(REGEXP_REPLACE(unitno, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST,
+    unitno ASC;
+    </textarea
+      >
+      <label for="notePad"><strong>Notepad:</strong></label
+      ><br />
+      <textarea id="notePad">
+WITH ranked_units AS (
+    SELECT 
         moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate,
+        -- Row-level sum protecting against NULL values
+        (
+            COALESCE(currentrent, 0) + 
+            COALESCE(day30, 0) + 
+            COALESCE(day60, 0) + 
+            COALESCE(day90, 0) + 
+            COALESCE(latefee, 0) + 
+            COALESCE(lien, 0)
+        ) AS balance,
         ROW_NUMBER() OVER (
             PARTITION BY unitno 
             ORDER BY moddate DESC NULLS LAST
@@ -175,37 +216,6 @@ WITH ranked_units AS (
 )
 SELECT moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate
 FROM ranked_units
-WHERE rn = 1
-ORDER BY 
-    NULLIF(REGEXP_REPLACE(unitno, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST,
-    unitno ASC;
-    </textarea
-      >
-      <label for="notePad"><strong>Notepad:</strong></label
-      ><br />
-      <textarea id="notePad">
--- To return only the single duplicate entry with the most recent moddate per unitno, wrap your current query in a Common Table Expression (CTE) and use ROW_NUMBER() OVER (PARTITION BY unitno ORDER BY moddate DESC NULLS LAST) to filter for rn = 1.
-
--- 1. Universal Standard SQL Approach (Recommended)
-
--- Using a CTE with ROW_NUMBER() adheres to standard ANSI SQL and gives you full control over how ties are handled before applying your custom unitno sorting:
-WITH duplicates AS (
-    SELECT moddate, custid, unitno, status, size, midate, modate
-    FROM public.unit
-    GROUP BY moddate, custid, unitno, status, size, midate, modate
-    HAVING COUNT(*) > 1
-),
-ranked_duplicates AS (
-    SELECT 
-        moddate, custid, unitno, status, size, midate, modate,
-        ROW_NUMBER() OVER (
-            PARTITION BY unitno 
-            ORDER BY moddate DESC NULLS LAST
-        ) AS rn
-    FROM duplicates
-)
-SELECT moddate, custid, unitno, status, size, midate, modate
-FROM ranked_duplicates
 WHERE rn = 1
 ORDER BY 
     NULLIF(REGEXP_REPLACE(unitno, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST,

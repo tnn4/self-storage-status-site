@@ -80,6 +80,7 @@ function renderColoredTable(results) {
     const currentStatus = String(rawStatus).toUpperCase().trim();
     const rawRate = row.unitrate || row.UnitRate || 0;
     const rawDate = row.paidtodate || row.PaidtoDate || row.paid_to_date || "";
+    const balance = row.balance;
 
     const className = colorCodedStatuses.includes(currentStatus)
       ? `status-row-${currentStatus}`
@@ -108,12 +109,14 @@ function renderColoredTable(results) {
       ? `$${rateNum.toFixed(2)}`
       : "\$0.00";
 
+    // COLUMN HEADERS
+    // Unit | Status Code | Rate | Balance
     const trHtml = `
         <tr class="${className}">
             <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>${unitNo}</strong></td>
             <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${currentStatus}</td>
             <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">${formattedRate}</td>
-            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${paymentDate}</td>
+            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${balance}</td>
         </tr>
     `;
     tableBody.insertAdjacentHTML("beforeend", trHtml);
@@ -303,7 +306,7 @@ function renderMatrixView2(results) {
         : "??";
 
       const squareHtml = `
-                <div class="unit-matrix-square ${className}" title="Unit: ${row.unitno}\nStatus: ${currentStatus}\nRate: $${row.unitrate}">
+                <div class="unit-matrix-square ${className}" title="Unit: ${row.unitno}\nStatus: ${currentStatus}\nBalance: $${row.balance}">
                     <div>${displayLabel}</div>
                     <div class="sub-text">${currentStatus}</div>
                 </div>

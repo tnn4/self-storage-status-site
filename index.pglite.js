@@ -272,7 +272,7 @@ async function syncSupabaseToPGlite() {
     ];
 
     const dbCols = keys.map((k) => (k === "primary" ? '"primary"' : `"${k}"`));
-    const batchSize = 50;
+    const batchSize = 100;
 
     await db.transaction(async (tx) => {
       for (let i = 0; i < rows.length; i += batchSize) {
