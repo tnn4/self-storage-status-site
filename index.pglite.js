@@ -1,12 +1,17 @@
 // --- 1. CONFIGURATION & PGlite SETUP ---
-const SUPABASE_URL = "https://ryehsunhoycigiviuupl.supabase.co/";
-const SUPABASE_ANON_KEY = "sb_publishable_KSECkuaRIqINH3OmBxJHlg_U_gs0y0L";
+// redundant but keep for now
+const SUPABASE_URL2 = "https://ryehsunhoycigiviuupl.supabase.co/";
+const SUPABASE_ANON_KEY2 = "sb_publishable_KSECkuaRIqINH3OmBxJHlg_U_gs0y0L";
+
+const SUPABASE_URL = window.APP_CONFIG.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.APP_CONFIG.SUPABASE_ANON_KEY;
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let allResults = [];
+let rowBatchInsertionSize = 100;
 let currentPage = 1;
-const rowsPerPage = 500;
+const rowsPerPage = 1000;
 
 let pgDb = null;
 
@@ -46,6 +51,7 @@ async function getCachedUnits() {
 }
 
 async function syncSupabaseToPGlite() {
+  let rows;
   const db = await initPGlite();
   const errorDiv = document.getElementById("errorMsg");
 
@@ -55,9 +61,11 @@ async function syncSupabaseToPGlite() {
     runBtn.disabled = true;
     runBtn.textContent = "Syncing rows...";
   }
-  if (errorDiv) errorDiv.textContent = "Syncing 13k rows from Supabase...";
+
   try {
-    const rows = await getCachedUnits();
+    rows = await getCachedUnits();
+    if (errorDiv)
+      errorDiv.textContent = `Syncing ${rows} rows from Supabase...`;
     if (rows.length === 0) return;
 
     console.log("Creating table schema in PGlite using native types...");
@@ -272,7 +280,7 @@ async function syncSupabaseToPGlite() {
     ];
 
     const dbCols = keys.map((k) => (k === "primary" ? '"primary"' : `"${k}"`));
-    const batchSize = 100;
+    const batchSize = rowBatchInsertionSize;
 
     await db.transaction(async (tx) => {
       for (let i = 0; i < rows.length; i += batchSize) {
@@ -301,7 +309,9 @@ async function syncSupabaseToPGlite() {
       }
     });
 
-    console.log("Synced all 13k rows successfully with native schema!");
+    console.log(
+      `Synced all ${Object.keys(rows).length} rows successfully with native schema!`,
+    );
     if (errorDiv)
       errorDiv.textContent = "Sync complete! Click 'Run Query' to load.";
     // ✅ SUCCESS: Enable the button and restore text
@@ -363,3 +373,5 @@ window.addEventListener("DOMContentLoaded", async () => {
     console.error("Initial sync error:", e);
   }
 });
+
+console.log("Loaded index.pglite.js");

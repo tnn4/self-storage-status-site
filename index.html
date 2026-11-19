@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Supabase SQL Client & Grid</title>
-    <!-- Replace AlaSQL with PGlite -->
+    <title>Storage Unit Status</title>
+    <!-- PGlite -->
     <script type="module">
       import { PGlite } from "https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js";
       window.PGlite = PGlite;
@@ -14,149 +14,11 @@
     <!-- AlaSQL for client-side SQL execution -->
     <script src="https://cdn.jsdelivr.net/npm/alasql@4"></script>
 
-    <link rel="stylesheet" href="styles.css" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #f9f9f9;
-        color: #333;
-      }
-      .container {
-        max-width: 1000px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      textarea {
-        width: 100%;
-        height: 80px;
-        font-family: monospace;
-        font-size: 14px;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
-      }
-      button {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 14px;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-top: 10px;
-      }
-      button:hover {
-        background: #0056b3;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-size: 13px;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-      }
-      th {
-        background-color: #f1f1f1;
-      }
-      .pagination {
-        margin-top: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .error {
-        color: red;
-        margin-top: 10px;
-      }
-
-      /* Color mappings for Unit Statuses */
-      .status-row-R0 {
-        background-color: #d4edda;
-        color: #155724;
-      } /* Soft Green */
-      .status-row-O1 {
-        background-color: #fff3cd;
-        color: #856404;
-      } /* Soft Yellow */
-      .status-row-D1 {
-        background-color: #fff3cd;
-        color: #856404;
-      } /* Soft Yellow */
-      .status-row-O2 {
-        background-color: #f8d7da;
-        color: #721c24;
-      } /* Soft Red */
-      .status-row-E0 {
-        background-color: #ffffff;
-        color: #212529;
-      } /* White */
-      .status-row-U0 {
-        background-color: #000000;
-        color: #212529;
-      } /* White */
-      .status-row-C0 {
-        background-color: #5a89ed;
-        color: #212529;
-      } /* Blue */
-      .status-row-L0 {
-        background-color: #c0c0c0;
-        color: #212529;
-      } /* Black */
-
-      /* LOWERCASE */
-      .status-row-r0 {
-        background-color: #d4edda;
-        color: #155724;
-      } /* Soft Green */
-      .status-row-o1 {
-        background-color: #fff3cd;
-        color: #856404;
-      } /* Soft Yellow */
-      .status-row-d1 {
-        background-color: #fff3cd;
-        color: #856404;
-      } /* Soft Yellow */
-      .status-row-o2 {
-        background-color: #f8d7da;
-        color: #721c24;
-      } /* Soft Red */
-      .status-row-e0 {
-        background-color: #ffffff;
-        color: #212529;
-      } /* White */
-      .status-row-u0 {
-        background-color: #000000;
-        color: #212529;
-      } /* White */
-      .status-row-c0 {
-        background-color: #5a89ed;
-        color: #212529;
-      } /* Blue */
-      .status-row-l0 {
-        background-color: #c0c0c0;
-        color: #212529;
-      } /* Black */
-
-      /* Default styling for unmapped or generic statuses */
-      .status-row-default {
-        background-color: #ffffff;
-        color: #212529;
-      }
-    </style>
+    <link rel="stylesheet" href="styles_.css" />
   </head>
   <body>
     <div class="container">
-      <h2>SQL Explorer</h2>
+      <h2>Unit Status</h2>
 
       <label for="sqlQuery"><strong>SQL Query:</strong></label
       ><br />
@@ -164,7 +26,6 @@
 WITH ranked_units AS (
     SELECT 
         moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate, currentrent, day30, day60, day90, latefee, lien,
-        -- Row-level sum protecting against NULL values
         (
             COALESCE(currentrent, 0) + 
             COALESCE(day30, 0) + 
@@ -188,110 +49,37 @@ WHERE rn = 1
 ORDER BY 
     NULLIF(REGEXP_REPLACE(unitno, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST,
     unitno ASC;
-    </textarea
-      >
+      </textarea>
+
       <label for="notePad"><strong>Notepad:</strong></label
       ><br />
-      <textarea id="notePad">
-WITH ranked_units AS (
-    SELECT 
-        moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate,
-        -- Row-level sum protecting against NULL values
-        (
-            COALESCE(currentrent, 0) + 
-            COALESCE(day30, 0) + 
-            COALESCE(day60, 0) + 
-            COALESCE(day90, 0) + 
-            COALESCE(latefee, 0) + 
-            COALESCE(lien, 0)
-        ) AS balance,
-        ROW_NUMBER() OVER (
-            PARTITION BY unitno 
-            ORDER BY moddate DESC NULLS LAST
-        ) AS rn
-    FROM unit
-    WHERE (modate IS NULL OR modate::date = '1899-12-30'::date)
-      AND unitno IS NOT NULL 
-      AND unitno != ''
-)
-SELECT moddate, custid, unitno, status, size, midate, modate, unitrate, paidtodate
-FROM ranked_units
-WHERE rn = 1
-ORDER BY 
-    NULLIF(REGEXP_REPLACE(unitno, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST,
-    unitno ASC;
-    </textarea
-      >
+      <textarea id="notePad" placeholder="Scratch notes..."></textarea>
+
       <br />
       <button id="btnRunQuery" disabled>Syncing database...</button>
-      <!-- <button onclick="executeQuery()">Run Query</button> -->
 
-      <!-- Matrix Container Wrapper -->
-      <div id="unitsGridMatrix">
-        <!-- Example of what JS injects dynamically: -->
-        <div
-          class="unit-matrix-square status-row-Rented"
-          title="Unit: A101&#10;Status: R0&#10;Rate: $145.00"
-        >
-          <div>A101</div>
-          <div class="sub-text">R0</div>
-        </div>
+      <!-- Matrix Container -->
+      <div id="unitsGridMatrix"></div>
 
-        <div
-          class="unit-matrix-square status-row-Delinquint"
-          title="Unit: B204&#10;Status: D1&#10;Rate: $180.00"
-        >
-          <div>B204</div>
-          <div class="sub-text">D1</div>
-        </div>
-
-        <div
-          class="unit-matrix-square status-row-Vacant"
-          title="Unit: C301&#10;Status: E0&#10;Rate: $95.00"
-        >
-          <div>C301</div>
-          <div class="sub-text">E0</div>
-        </div>
-
-        <div
-          class="unit-matrix-square status-row-Locked"
-          title="Unit: C302&#10;Status: L0&#10;Rate: $95.00"
-        >
-          <div>C302</div>
-          <div class="sub-text">L0</div>
-        </div>
-      </div>
-
-      <!-- Table Shell Context -->
+      <!-- Colored Table Container -->
       <div id="listLayoutContainer">
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15px">
+        <table>
           <thead>
-            <tr
-              style="
-                background-color: #f8f9fa;
-                border-bottom: 2px solid #dee2e6;
-              "
-            >
-              <th style="padding: 10px; text-align: left">Unit</th>
-              <th style="padding: 10px; text-align: center">Status Code</th>
-              <th style="padding: 10px; text-align: right">Rate</th>
-              <th style="padding: 10px; text-align: center">Paid To Date</th>
+            <tr>
+              <th>Unit</th>
+              <th style="text-align: center">Status Code</th>
+              <th style="text-align: right">Rate</th>
+              <th style="text-align: center">Balance</th>
             </tr>
           </thead>
           <tbody id="activeUnitsTableBody">
-            <!-- Dynamic JavaScript injection maps here -->
-            <!-- Example of what JS injects: -->
-            <tr class="status-row-Rented">
-              <td><strong>A101</strong></td>
-              <td style="text-align: center">R0</td>
-              <td style="text-align: right">$145.00</td>
-              <td style="text-align: center">2026-11-01</td>
-            </tr>
-            <tr class="status-row-Delinquint">
-              <td><strong>B204</strong></td>
-              <td style="text-align: center">D1</td>
-              <td style="text-align: right">$180.00</td>
-              <td style="text-align: center">2026-09-15</td>
+            <tr>
+              <td
+                colspan="4"
+                style="text-align: center; padding: 20px; color: #6c757d"
+              >
+                Click 'Run Query' to load rows...
+              </td>
             </tr>
           </tbody>
         </table>
@@ -305,157 +93,58 @@ ORDER BY
         <button id="nextBtn" onclick="changePage(1)" disabled>Next</button>
       </div>
 
-      <!-- COLORED GRID -->
-      <!-- 1. View Switching Controls -->
+      <button id="toggleRenderDebugButton">Toggle Render Debug</button>
+      <button id="devModeBtn" onclick="toggleDevView()">Enable Dev Mode</button>
 
-      <!-- 2. The Container targets -->
-      <div id="listLayoutContainer" style="display: none">
-        <table
-          style="
-            width: 100%;
-            border-collapse: collapse;
-            font-family: sans-serif;
-          "
-        >
+      <!-- Dev / Raw Table View -->
+      <div id="excelViewContainer" style="overflow-x: auto; display: none">
+        <table id="resultsTable">
           <thead>
-            <tr style="background-color: #f8f9fa">
-              <th style="padding: 8px; border: 1px solid #dee2e6">Unit</th>
-              <th style="padding: 8px; border: 1px solid #dee2e6">Status</th>
-            </tr>
+            <tr id="tableHeaders"></tr>
           </thead>
-          <tbody id="unitsTableBody"></tbody>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="5" style="text-align: center">
+                Click 'Run Query' to load data
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
-      <!-- Matrix view target element -->
-      <div
-        id="unitsGridMatrix"
-        style="
-          width: 100%;
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-          gap: 8px;
-          font-family: sans-serif;
-        "
-      ></div>
+      <script>
+        function toggleDevView() {
+          const devElement = document.getElementById("excelViewContainer");
+          const btn = document.getElementById("devModeBtn");
 
-      <!-- END -->
-      <!-- COLORED ROW VIEW -->
-      <table
-        style="
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 15px;
-          font-family: sans-serif;
-        "
-      >
-        <thead>
-          <tr
-            style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6"
-          >
-            <th
-              style="padding: 10px; text-align: left; border: 1px solid #dee2e6"
-            >
-              Unit Number
-            </th>
-            <th
-              style="
-                padding: 10px;
-                text-align: center;
-                border: 1px solid #dee2e6;
-              "
-            >
-              Status
-            </th>
-            <th
-              style="
-                padding: 10px;
-                text-align: right;
-                border: 1px solid #dee2e6;
-              "
-            >
-              Rate
-            </th>
-            <th
-              style="
-                padding: 10px;
-                text-align: center;
-                border: 1px solid #dee2e6;
-              "
-            >
-              Paid To Date
-            </th>
-          </tr>
-        </thead>
-        <!-- JavaScript binds directly to this body identifier -->
-        <tbody id="unitsTableBody">
-          <tr>
-            <td
-              colspan="4"
-              style="text-align: center; padding: 20px; color: #6c757d"
-            >
-              Click 'Run Query' to load color-coded rows...
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!-- END -->
+          if (devElement.style.display === "block") {
+            devElement.style.display = "none";
+            btn.innerText = "Enable Dev Mode";
+            return;
+          }
 
-    <button id="toggleRenderDebugButton">Toggle Render Debug</button>
+          const input = prompt("Enter developer password:");
+          const pass = "dev";
+          if (input === pass) {
+            devElement.style.display = "block";
+            btn.innerText = "Disable Dev Mode";
+          } else if (password !== null) {
+            alert("Incorrect password.");
+          }
+        }
+      </script>
 
-    <!-- DEVELOPER MODE BUTTON -->
-    <button id="devModeBtn" onclick="toggleDevView()">Enable Dev Mode</button>
-
-    <!-- EXCEL VIEW (Hidden by default using style="display: none;") -->
-    <div id="excelViewContainer" style="overflow-x: auto; display: none">
-      <table id="resultsTable">
-        <thead>
-          <tr id="tableHeaders"></tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr>
-            <td colspan="5" style="text-align: center">
-              Click 'Run Query' to load data
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <button onclick="testSupabaseConnection()">
+        Test Supabase Connection
+      </button>
+      <button onclick="diagnoseUnitTable()">Diagnose Unit Table</button>
     </div>
 
-    <script>
-      function toggleDevView() {
-        const devElement = document.getElementById("excelViewContainer");
-        const btn = document.getElementById("devModeBtn");
-
-        // If it's already visible, let the developer hide it again without a prompt
-        if (devElement.style.display === "block") {
-          devElement.style.display = "none";
-          btn.innerText = "Enable Dev Mode";
-          return;
-        }
-
-        // Prompt for the developer password
-        const password = prompt("Enter developer password:");
-
-        if (password === "dev") {
-          // <-- Change your password here
-          devElement.style.display = "block";
-          btn.innerText = "Disable Dev Mode";
-        } else if (password !== null) {
-          // Ensure it doesn't alert if the user clicked "Cancel"
-          alert("Incorrect password.");
-        }
-      }
-    </script>
-    <!-- END -->
-
-    <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
-
-    <button onclick="diagnoseUnitTable()">Diagnose Unit Table</button>
+    <script src="./config.js"></script>
+    <script src="./index.pglite.js"></script>
+    <script src="./render.js"></script>
+    <script src="./status.js"></script>
+    <script src="./color.js"></script>
+    <script src="./initButtons.js"></script>
   </body>
-  <script src="./index.pglite.js"></script>
-  <script src="./render.js"></script>
-  <script src="./status.js"></script>
-  <script src="./initButtons.js"></script>
 </html>

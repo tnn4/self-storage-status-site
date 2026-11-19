@@ -1,0 +1,311 @@
+/* ==========================================================================
+   1. DESIGN TOKENS
+   ========================================================================== */
+:root {
+  /* Neutrals */
+  --bg-page: #f9f9f9;
+  --bg-surface: #ffffff;
+  --bg-header: #f1f1f1;
+  --text-primary: #333333;
+  --text-dark: #212529;
+  --text-black: #000000;
+  --text-white: #ffffff;
+  --border-light: #dddddd;
+  --border-table: #dee2e6;
+  --border-input: #cccccc;
+  --border-square: #adb5bd;
+  --border-square-active: #6c757d;
+
+  /* Actions & Feedback */
+  --primary: #007bff;
+  --primary-hover: #0056b3;
+  --danger: #dc3545;
+
+  /* Lowercase Code Statuses */
+  --code-green-bg: #d4edda;
+  --code-green-fg: #155724;
+  --code-yellow-bg: #fff3cd;
+  --code-yellow-fg: #856404;
+  --code-red-bg: #f8d7da;
+  --code-red-fg: #721c24;
+  --code-blue-bg: #5a89ed;
+  --code-gray-bg: #c0c0c0;
+
+  /* Named Statuses */
+  --alert-red-bg: #ff3f3f;
+  --warn-yellow-bg: #ffff10;
+  --rented-green-bg: #ccffcc;
+  --maint-orange-bg: #ffe6cc;
+  --comp-blue-bg: #e6f2ff;
+
+  /* Radii & Spacing */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+/* ==========================================================================
+   2. PAGE, FORM CONTROLS & PAGINATION
+   ========================================================================== */
+body {
+  margin: 20px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  max-height: 300px;
+  padding: 10px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 14px;
+  field-sizing: content;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.error {
+  margin-top: 10px;
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   3. TABLES & STATUS COLORS
+   ========================================================================== */
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  padding: 8px;
+  border: 1px solid var(--border-light);
+  text-align: left;
+}
+
+th {
+  background-color: var(--bg-header);
+}
+
+#unitsTableBody tr td {
+  padding: 10px 12px;
+  border: 1px solid var(--border-table);
+}
+
+/* Lowercase status classes */
+.status-row-r0 {
+  background-color: var(--code-green-bg);
+  color: var(--code-green-fg);
+}
+
+.status-row-o1,
+.status-row-d1 {
+  background-color: var(--code-yellow-bg);
+  color: var(--code-yellow-fg);
+}
+
+.status-row-o2 {
+  background-color: var(--code-red-bg);
+  color: var(--code-red-fg);
+}
+
+.status-row-e0 {
+  background-color: var(--bg-surface);
+  color: var(--text-dark);
+}
+
+.status-row-u0 {
+  background-color: var(--text-black);
+  color: var(--text-white);
+}
+
+.status-row-c0 {
+  background-color: var(--code-blue-bg);
+  color: var(--text-dark);
+}
+
+.status-row-l0 {
+  background-color: var(--code-gray-bg);
+  color: var(--text-dark);
+}
+
+/* Named status classes */
+.status-row-Locked {
+  background-color: var(--text-black) !important;
+  color: var(--text-white);
+}
+
+.status-row-Problem,
+.status-row-Delinquint,
+.status-row-SuperLate {
+  background-color: var(--alert-red-bg) !important;
+  color: var(--text-white);
+}
+
+.status-row-Late {
+  background-color: var(--warn-yellow-bg) !important;
+  color: var(--text-black);
+}
+
+.status-row-Vacant {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-black);
+}
+
+.status-row-Rented {
+  background-color: var(--rented-green-bg) !important;
+  color: var(--text-black);
+}
+
+.status-row-Maintenance {
+  background-color: var(--maint-orange-bg) !important;
+  color: var(--text-black);
+}
+
+.status-row-Complimentary {
+  background-color: var(--comp-blue-bg) !important;
+  color: var(--text-black);
+}
+
+.status-row-Unrentable {
+  background-color: var(--code-gray-bg) !important;
+  color: var(--text-black);
+}
+
+.status-row-default {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-black);
+}
+
+/* ==========================================================================
+   4. MATRIX GRID
+   ========================================================================== */
+#unitsGridMatrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 15px;
+  padding: 15px 0;
+}
+
+.unit-matrix-square {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border-square);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.unit-matrix-square:hover {
+  z-index: 10;
+  transform: scale(1.06);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+.unit-matrix-square .sub-text {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: normal;
+  opacity: 0.75;
+}
+
+/* ==========================================================================
+   5. UNIT DETAIL POPOVER (MOBILE TAP)
+   ========================================================================== */
+.unit-popover {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(92vw, 340px);
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-square-active);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+}
+
+.unit-popover__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.unit-popover__close {
+  margin: 0;
+  padding: 2px 8px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.unit-popover__close:hover {
+  background: var(--bg-header);
+}
+
+.unit-popover__balance {
+  margin: 6px 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.unit-popover__meta {
+  font-size: 12px;
+  color: var(--text-dark);
+}
